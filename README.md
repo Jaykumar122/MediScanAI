@@ -85,51 +85,6 @@
 
 ---
 
-## 🏗 System Architecture
-
-```
-mediscan-ai/
-├── app/                          # Next.js App Router
-│   ├── (auth)/                   # Authentication pages
-│   │   ├── login/
-│   │   └── register/
-│   ├── (dashboards)/
-│   │   ├── doctor/               # Doctor dashboard & tools
-│   │   ├── pharmacy/             # Medical shop dashboard
-│   │   ├── admin/                # Admin control panel
-│   │   └── patient/              # Patient portal
-│   ├── api/                      # API Routes (Node.js)
-│   │   ├── auth/
-│   │   ├── prescriptions/
-│   │   ├── qr/
-│   │   ├── ai/
-│   │   │   ├── summarize/        # Gemini report summarization
-│   │   │   ├── skin-diagnosis/   # Skin disease AI
-│   │   │   └── medicine-assist/  # Doctor AI assistant
-│   │   └── users/
-│   └── layout.tsx
-├── components/                   # Reusable UI components
-│   ├── ui/                       # Base components
-│   ├── prescription/             # Prescription-specific components
-│   ├── qr/                       # QR generator & scanner
-│   └── dashboard/                # Dashboard layout components
-├── lib/                          # Core utilities
-│   ├── db/                       # MongoDB connection (Mongoose)
-│   ├── gemini/                   # Gemini AI client
-│   ├── qr/                       # QR encryption/decryption
-│   └── auth/                     # Auth helpers
-├── models/                       # MongoDB schemas
-│   ├── User.ts
-│   ├── Prescription.ts
-│   ├── QRScan.ts
-│   └── MedicalRecord.ts
-├── types/                        # TypeScript type definitions
-├── hooks/                        # Custom React hooks
-├── public/
-└── middleware.ts                 # Route protection by role
-```
-
----
 
 ## 📊 Dashboards
 
@@ -174,8 +129,8 @@ mediscan-ai/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/mediscan-ai.git
-cd mediscan-ai
+git clone https://github.com/Jaykumar122/MediScanAI.git
+cd mediscanai
 
 # 2. Install dependencies
 npm install
@@ -189,24 +144,6 @@ cp .env.example .env.local
 Create a `.env.local` file in the root directory:
 
 ```env
-# App
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_nextauth_secret_key
-
-# MongoDB
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/mediscan
-
-# Google Gemini AI
-GEMINI_API_KEY=your_gemini_api_key
-
-# QR Encryption
-QR_ENCRYPTION_KEY=your_qr_encryption_secret
-QR_ENCRYPTION_ALGORITHM=AES-256-CBC
-
-# Admin
-ADMIN_EMAIL=admin@mediscan.com
-```
-
 ### Running the App
 
 ```bash
@@ -327,7 +264,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 For questions, feedback, or collaboration:
 
-- 📧 Email: `mediscanai@yourdomain.com`
+- 📧 Email: `singhjay66555521@gmail.com`
 - 🐛 Issues: [GitHub Issues](https://github.com/your-username/mediscan-ai/issues)
 
 ---
