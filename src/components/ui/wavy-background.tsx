@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createNoise3D } from "simplex-noise";
 
 export const WavyBackground = ({
@@ -26,16 +26,13 @@ export const WavyBackground = ({
   waveOpacity?: number;
   [key: string]: any;
 }) => {
-  const noise = createNoise3D();
-  let w: number,
-    h: number,
-    nt: number,
-    i: number,
-    x: number,
-    ctx: any,
-    canvas: any;
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const getSpeed = () => {
+  const noiseRef = useRef(createNoise3D());
+  const stateRef = useRef({ w: 0, h: 0, nt: 0 });
+  const animationIdRef = useRef<number | null>(null);
+  const [isSafari, setIsSafari] = useState(false);
+
+  const getSpeed = useCallback(() => {
     switch (speed) {
       case "slow":
         return 0.001;
@@ -44,22 +41,7 @@ export const WavyBackground = ({
       default:
         return 0.001;
     }
-  };
-
-  const init = () => {
-    canvas = canvasRef.current;
-    ctx = canvas.getContext("2d");
-    w = ctx.canvas.width = window.innerWidth;
-    h = ctx.canvas.height = window.innerHeight;
-    ctx.filter = `blur(${blur}px)`;
-    nt = 0;
-    window.onresize = function () {
-      w = ctx.canvas.width = window.innerWidth;
-      h = ctx.canvas.height = window.innerHeight;
-      ctx.filter = `blur(${blur}px)`;
-    };
-    render();
-  };
+  }, [speed]);
 
   const waveColors = colors ?? [
     "#38bdf8",
@@ -68,40 +50,82 @@ export const WavyBackground = ({
     "#e879f9",
     "#22d3ee",
   ];
-  const drawWave = (n: number) => {
-    nt += getSpeed();
-    for (i = 0; i < n; i++) {
+
+  const init = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
+
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    canvas.width = w;
+    canvas.height = h;
+    ctx.filter = `blur(${blur}px)`;
+
+    stateRef.current = { w, h, nt: 0 };
+
+    const handleResize = () => {
+      const newW = window.innerWidth;
+      const newH = window.innerHeight;
+      canvas.width = newW;
+      canvas.height = newH;
+      ctx.filter = `blur(${blur}px)`;
+      stateRef.current.w = newW;
+      stateRef.current.h = newH;
+    };
+
+    window.addEventListener("resize", handleResize);
+    render(ctx);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [blur]);
+
+  const drawWave = useCallback((ctx: CanvasRenderingContext2D, n: number) => {
+    const state = stateRef.current;
+    const noise = noiseRef.current;
+
+    state.nt += getSpeed();
+
+    for (let i = 0; i < n; i++) {
       ctx.beginPath();
       ctx.lineWidth = waveWidth || 50;
       ctx.strokeStyle = waveColors[i % waveColors.length];
-      for (x = 0; x < w; x += 5) {
-        var y = noise(x / 800, 0.3 * i, nt) * 100;
-        ctx.lineTo(x, y + h * 0.5); // adjust for height, currently at 50% of the container
+      for (let x = 0; x < state.w; x += 5) {
+        const y = noise(x / 800, 0.3 * i, state.nt) * 100;
+        ctx.lineTo(x, y + state.h * 0.5);
       }
       ctx.stroke();
       ctx.closePath();
     }
-  };
+  }, [getSpeed, waveColors, waveWidth]);
 
-  let animationId: number;
-  const render = () => {
+  const render = useCallback((ctx: CanvasRenderingContext2D) => {
+    const state = stateRef.current;
+
     ctx.fillStyle = backgroundFill || "black";
     ctx.globalAlpha = waveOpacity || 0.5;
-    ctx.fillRect(0, 0, w, h);
-    drawWave(5);
-    animationId = requestAnimationFrame(render);
-  };
+    ctx.fillRect(0, 0, state.w, state.h);
+    drawWave(ctx, 5);
+
+    animationIdRef.current = requestAnimationFrame(() => render(ctx));
+  }, [backgroundFill, waveOpacity, drawWave]);
 
   useEffect(() => {
-    init();
+    const cleanup = init();
     return () => {
-      cancelAnimationFrame(animationId);
+      if (cleanup) cleanup();
+      if (animationIdRef.current !== null) {
+        cancelAnimationFrame(animationIdRef.current);
+      }
     };
-  }, []);
+  }, [init]);
 
-  const [isSafari, setIsSafari] = useState(false);
   useEffect(() => {
-    // I'm sorry but i have got to support it on safari.
     setIsSafari(
       typeof window !== "undefined" &&
         navigator.userAgent.includes("Safari") &&
