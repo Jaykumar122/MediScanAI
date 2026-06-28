@@ -1,15 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useTransition, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  createPrescription,
-  getMedicationSuggestions,
-} from '@/lib/actions';
-import { PrescriptionSchema, Medication } from '@/lib/definitions';
-import { Button } from '@/components/ui/button';
+import { useState, useTransition, useEffect, useCallback } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { createPrescription, getMedicationSuggestions } from "@/lib/actions";
+import { MedicationSchema, Medication } from "@/lib/definitions";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -18,15 +15,29 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2, PlusCircle, Trash2, Bot } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import QrCodeDialog from './qr-code-dialog';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Loader2, PlusCircle, Trash2, Bot } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import QrCodeDialog from "./qr-code-dialog";
 
-type PrescriptionFormValues = z.infer<typeof PrescriptionSchema>;
+// Form schema without default values to avoid TypeScript issues
+const PrescriptionFormSchema = z.object({
+  _id: z.string().optional(),
+  patientName: z.string().min(1, "Patient name is required."),
+  patientAge: z.coerce.number().min(0, "Age must be a positive number."),
+  symptoms: z.string().min(1, "Symptoms are required."),
+  medications: z
+    .array(MedicationSchema)
+    .min(1, "At least one medication is required."),
+  scanCount: z.number().optional(),
+  maxScans: z.coerce.number().min(1, "Scan limit is required."),
+  createdAt: z.date().optional(),
+});
+
+type PrescriptionFormValues = z.infer<typeof PrescriptionFormSchema>;
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -55,22 +66,22 @@ export default function CreatePrescriptionForm() {
   const [isSuggesting, setSuggesting] = useState(false);
 
   const form = useForm<PrescriptionFormValues>({
-    resolver: zodResolver(PrescriptionSchema),
+    resolver: zodResolver(PrescriptionFormSchema),
     defaultValues: {
-      patientName: '',
+      patientName: "",
       patientAge: 0,
-      symptoms: '',
-      medications: [{ name: '', dosage: '', frequency: '', quantity: '' }],
+      symptoms: "",
+      medications: [{ name: "", dosage: "", frequency: "", quantity: "" }],
       maxScans: 5,
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'medications',
+    name: "medications",
   });
 
-  const symptomsValue = form.watch('symptoms');
+  const symptomsValue = form.watch("symptoms");
   const debouncedSymptoms = useDebounce(symptomsValue, 500);
 
   useEffect(() => {
@@ -81,15 +92,15 @@ export default function CreatePrescriptionForm() {
           if (result.medications) {
             setSuggestions(
               result.medications
-                .split(',')
+                .split(",")
                 .map((s) => s.trim())
-                .filter(Boolean)
+                .filter(Boolean),
             );
           } else {
             setSuggestions([]);
           }
           setSuggesting(false);
-        }
+        },
       );
     } else {
       setSuggestions([]);
@@ -97,26 +108,37 @@ export default function CreatePrescriptionForm() {
   }, [debouncedSymptoms]);
 
   const addMedication = (medication?: Partial<Medication>) => {
-    append({ name: '', dosage: '', frequency: '', quantity: '', ...medication });
+    append({
+      name: "",
+      dosage: "",
+      frequency: "",
+      quantity: "",
+      ...medication,
+    });
   };
 
   const onSubmit = (data: PrescriptionFormValues) => {
     startTransition(async () => {
-      const result = await createPrescription(data);
+      // Ensure maxScans has a value
+      const prescriptionData = {
+        ...data,
+        maxScans: data.maxScans ?? 5,
+      };
+      const result = await createPrescription(prescriptionData);
       if (result.success && result.token) {
         setGeneratedToken(result.token);
         setDialogOpen(true);
         toast({
-          title: 'Success!',
-          description: 'Prescription QR code has been generated.',
+          title: "Success!",
+          description: "Prescription QR code has been generated.",
         });
         form.reset();
       } else {
         toast({
-          variant: 'destructive',
-          title: 'Error',
+          variant: "destructive",
+          title: "Error",
           description:
-            result.error || 'Something went wrong. Please try again.',
+            result.error || "Something went wrong. Please try again.",
         });
       }
     });
@@ -156,7 +178,7 @@ export default function CreatePrescriptionForm() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={form.control}
                 name="maxScans"
@@ -166,8 +188,9 @@ export default function CreatePrescriptionForm() {
                     <FormControl>
                       <Input type="number" placeholder="5" {...field} />
                     </FormControl>
-                     <FormDescription>
-                      Set how many times the QR code can be scanned. For unlimited scans, enter a very high number (e.g. 9999).
+                    <FormDescription>
+                      Set how many times the QR code can be scanned. For
+                      unlimited scans, enter a very high number (e.g. 9999).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -193,28 +216,30 @@ export default function CreatePrescriptionForm() {
                   )}
                 />
                 {(isSuggesting || suggestions.length > 0) && (
-                   <div className="mt-2 p-3 bg-accent/20 rounded-md border border-dashed border-accent">
+                  <div className="mt-2 p-3 bg-accent/20 rounded-md border border-dashed border-accent">
                     <div className="flex items-center gap-2 text-sm font-medium text-accent-foreground mb-2">
-                        <Bot className="h-5 w-5"/>
-                        <span>AI Suggestions</span>
-                        {isSuggesting && <Loader2 className="h-4 w-4 animate-spin"/>}
+                      <Bot className="h-5 w-5" />
+                      <span>AI Suggestions</span>
+                      {isSuggesting && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {suggestions.map((med, index) => (
+                      {suggestions.map((med, index) => (
                         <Button
-                            key={index}
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="bg-background"
-                            onClick={() => addMedication({ name: med })}
+                          key={index}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="bg-background"
+                          onClick={() => addMedication({ name: med })}
                         >
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            {med}
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          {med}
                         </Button>
-                        ))}
+                      ))}
                     </div>
-                   </div>
+                  </div>
                 )}
               </div>
 
@@ -302,14 +327,18 @@ export default function CreatePrescriptionForm() {
               </div>
             </CardContent>
             <CardFooter className="p-6 md:p-8 border-t">
-              <Button type="submit" disabled={isPending} className="w-full md:w-auto ml-auto">
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="w-full md:w-auto ml-auto"
+              >
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Generating...
                   </>
                 ) : (
-                  'Generate Secure QR Code'
+                  "Generate Secure QR Code"
                 )}
               </Button>
             </CardFooter>

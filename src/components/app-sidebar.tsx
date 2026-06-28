@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
+import * as React from "react";
+import Link from "next/link";
 import {
   IconCamera,
   IconChartBar,
@@ -18,13 +18,14 @@ import {
   IconReport,
   IconSearch,
   IconSettings,
+  IconUser,
   IconUsers,
-} from "@tabler/icons-react"
+} from "@tabler/icons-react";
 
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -33,8 +34,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { ListIcon, User, UserIcon } from "lucide-react"
+} from "@/components/ui/sidebar";
+import { IconList } from "@tabler/icons-react";
 
 const data = {
   user: {
@@ -51,7 +52,7 @@ const data = {
     {
       title: "Users",
       url: "/dashboard/admin/users",
-      icon: UserIcon,
+      icon: IconUser,
     },
     {
       title: "Doctors",
@@ -71,7 +72,7 @@ const data = {
     {
       title: "Drugs ",
       url: "/dashboard/admin/drugs",
-      icon: ListIcon,
+      icon: IconList,
     },
     {
       title: "AI assistants ",
@@ -161,7 +162,7 @@ const data = {
       icon: IconFileWord,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -190,5 +191,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema(
 
     govId: {
       type: String,
-      required: function() {
+      required: function (): boolean {
         // govId not required for admin users
         return this.role !== "admin";
       },
@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema(
     // Patient-specific fields
     age: {
       type: Number,
-      required: function() {
+      required: function (): boolean {
         return this.role === "patient";
       },
       min: [0, "Age must be a positive number"],
@@ -82,7 +82,7 @@ const userSchema = new mongoose.Schema(
     bloodType: {
       type: String,
       enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", ""],
-      required: function() {
+      required: function (): boolean {
         return this.role === "patient";
       },
     },
@@ -90,7 +90,7 @@ const userSchema = new mongoose.Schema(
     // Doctor-specific fields
     specialization: {
       type: String,
-      required: function() {
+      required: function (): boolean {
         return this.role === "doctor";
       },
       trim: true,
@@ -134,7 +134,7 @@ const userSchema = new mongoose.Schema(
     verifyToken: String,
     verifyTokenExpiry: Date,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Index for role-based queries
@@ -144,32 +144,32 @@ userSchema.index({ role: 1 });
 userSchema.index({ email: 1 });
 
 // Pre-save middleware to sync isAdmin with role
-userSchema.pre('save', function(next) {
+userSchema.pre("save", function (next) {
   // Sync isAdmin flag with admin role
-  if (this.role === 'admin') {
+  if (this.role === "admin") {
     this.isAdmin = true;
   }
-  
+
   // Auto-generate name from firstName and lastName if not provided
   if (!this.name && this.firstName && this.lastName) {
     this.name = `${this.firstName} ${this.lastName}`;
   }
-  
+
   next();
 });
 
 // Method to check if user is admin
-userSchema.methods.isAdminUser = function() {
-  return this.role === 'admin' || this.isAdmin === true;
+userSchema.methods.isAdminUser = function () {
+  return this.role === "admin" || this.isAdmin === true;
 };
 
 // Method to get user display name
-userSchema.methods.getDisplayName = function() {
+userSchema.methods.getDisplayName = function () {
   return this.name || `${this.firstName} ${this.lastName}`;
 };
 
 // Method to get safe user object (without sensitive data)
-userSchema.methods.toSafeObject = function() {
+userSchema.methods.toSafeObject = function () {
   const obj = this.toObject();
   delete obj.password;
   delete obj.forgotPasswordToken;

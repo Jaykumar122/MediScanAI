@@ -1,35 +1,53 @@
-'use server';
+import { SignJWT, jwtVerify } from "jose";
 
-import { SignJWT, jwtVerify } from 'jose';
-
-const secret = process.env.JWT_SECRET;
-
-if (!secret || secret.length < 32) {
-  throw new Error('JWT_SECRET must be defined in .env and be at least 32 characters long');
+export interface JwtPayload {
+  userId: string;
+  email: string;
+  role?: "admin" | "doctor" | "patient" | "pharmacist";
+  provider?: "local" | "google" | "github" | "apple";
+  temp?: boolean; // For temporary tokens during OAuth flow
+  iat?: number;
+  exp?: number;
 }
 
-const secretKey = new TextEncoder().encode(secret);
-const alg = 'HS256';
+function getSecretKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      "JWT_SECRET is missing or shorter than 32 characters. Set it in .env or .env.local",
+    );
+  }
+  return new TextEncoder().encode(secret);
+}
 
-export async function encrypt(payload: any) {
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg })
+const ALG = "HS256";
+const ISSUER = "urn:mediscanai:issuer";
+const AUD = "urn:mediscanai:audience";
+
+/** Signs a JWT that expires in 2 days. */
+export async function encrypt(
+  payload: Omit<JwtPayload, "iat" | "exp"> | Record<string, unknown>,
+): Promise<string> {
+  return new SignJWT(payload as Record<string, unknown>)
+    .setProtectedHeader({ alg: ALG })
     .setIssuedAt()
-    .setIssuer('urn:securerx:issuer')
-    .setAudience('urn:securerx:audience')
-    .setExpirationTime('30d')
-    .sign(secretKey);
+    .setIssuer(ISSUER)
+    .setAudience(AUD)
+    .setExpirationTime("2d")
+    .sign(getSecretKey());
 }
 
-export async function decrypt(token: string) {
+/** Verifies and decodes a JWT. Returns null if invalid or expired. */
+export async function decrypt<T = JwtPayload>(
+  token: string,
+): Promise<T | null> {
   try {
-    const { payload } = await jwtVerify(token, secretKey, {
-      issuer: 'urn:securerx:issuer',
-      audience: 'urn:securerx:audience',
+    const { payload } = await jwtVerify(token, getSecretKey(), {
+      issuer: ISSUER,
+      audience: AUD,
     });
-    return payload;
-  } catch (error) {
-    console.error('Decryption failed:', error);
+    return payload as unknown as T;
+  } catch {
     return null;
   }
 }

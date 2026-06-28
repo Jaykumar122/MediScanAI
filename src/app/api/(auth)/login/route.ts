@@ -1,68 +1,72 @@
-'use server';
-
-import { NextRequest, NextResponse } from 'next/server';
-import { MongoClient } from 'mongodb';
-import bcrypt from 'bcryptjs';
-import { encrypt } from '@/lib/crypto';
-import type { User } from '@/lib/definitions';
-
-const MONGO_URI = process.env.MONGODB_URI;
-const DB_NAME = 'securerx';
-const USERS_COLLECTION = 'users';
-
-if (!MONGO_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
-
-async function getDb() {
-  const client = new MongoClient(MONGO_URI);
-  await client.connect();
-  return client.db(DB_NAME);
-}
+import bcrypt from "bcryptjs";
+import { NextRequest, NextResponse } from "next/server";
+import { encrypt } from "@/lib/crypto";
+import { findUserByEmail, sanitizeUser } from "@/lib/auth/user";
+import { setAuthCookie } from "@/lib/auth/session";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    const email = String(body.email ?? "")
+      .trim()
+      .toLowerCase();
+    const password = String(body.password ?? "");
 
     if (!email || !password) {
-      return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
+      return NextResponse.json(
+        { message: "Email and password are required." },
+        { status: 400 },
+      );
     }
 
-    const db = await getDb();
-    const usersCollection = db.collection<User>(USERS_COLLECTION);
-
-    const user = await usersCollection.findOne({ email: email.toLowerCase() });
-
+    const user = await findUserByEmail(email);
     if (!user) {
-      return NextResponse.json({ message: 'User account not found. Please sign up.' }, { status: 404 });
-    }
-    
-    if (user.role === 'admin') {
-        return NextResponse.json({ message: 'Admin accounts must log in through the admin portal.' }, { status: 403 });
+      return NextResponse.json(
+        { message: "No account found with this email. Please sign up." },
+        { status: 404 },
+      );
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return NextResponse.json({ message: 'Invalid email or password.' }, { status: 401 });
+    if (user.role === "admin") {
+      return NextResponse.json(
+        { message: "Admin accounts must use the admin portal." },
+        { status: 403 },
+      );
     }
-    
-    const tokenPayload = {
-      userId: user._id!.toString(),
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return NextResponse.json(
+        { message: "Incorrect password. Please try again." },
+        { status: 401 },
+      );
+    }
+
+    const token = await encrypt({
+      userId: String(user._id),
       email: user.email,
       role: user.role,
-    };
-    const token = await encrypt(tokenPayload);
+      provider:
+        ((user as Record<string, unknown>).provider as "local") ?? "local",
+    });
 
-    const { password: _, ...userWithoutPassword } = user;
+    await setAuthCookie(token);
 
     return NextResponse.json({
-      message: 'Login successful',
+      message: "Login successful.",
       token,
-      user: userWithoutPassword,
+      user: sanitizeUser(user),
     });
-  } catch (error) {
-    console.error('User login error:', error);
-    return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/login]", message);
+
+    return NextResponse.json(
+      {
+        message: "Login failed. Please try again.",
+        ...(process.env.NODE_ENV === "development" && { detail: message }),
+      },
+      { status: 500 },
+    );
   }
 }

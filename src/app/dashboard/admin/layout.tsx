@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Loading from '@/app/loading';
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Loading from "@/app/loading";
 
 export default function AdminLayout({
   children,
@@ -13,13 +13,15 @@ export default function AdminLayout({
   const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    const role = localStorage.getItem('userRole');
+    // Check both adminToken (from /admin/login) and authToken (from /login)
+    const adminToken = localStorage.getItem("adminToken");
+    const authToken = localStorage.getItem("authToken");
+    const role = localStorage.getItem("userRole");
 
-    if (token && role === 'admin') {
+    if ((adminToken || authToken) && role === "admin") {
       setIsVerified(true);
     } else {
-      router.replace('/admin/login');
+      router.replace("/admin/login");
     }
   }, [router]);
 

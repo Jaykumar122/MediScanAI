@@ -1,31 +1,57 @@
-'use server';
-
-import { NextRequest, NextResponse } from 'next/server';
-import { MongoClient } from 'mongodb';
-import bcrypt from 'bcryptjs';
-import type { User } from '@/lib/definitions';
-import { encrypt } from '@/lib/crypto';
-
-
-const MONGO_URI = process.env.MONGODB_URI;
-const DB_NAME = 'securerx';
-const USERS_COLLECTION = 'users';
-
-if (!MONGO_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
-
-async function getDb() {
-  const client = new MongoClient(MONGO_URI);
-  await client.connect();
-  return client.db(DB_NAME);
-}
+import { NextRequest, NextResponse } from "next/server";
+import { encrypt } from "@/lib/crypto";
+import { createLocalUser, findUserByEmail } from "@/lib/auth/user";
+import { setAuthCookie } from "@/lib/auth/session";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const {
+    const firstName = String(body.firstName ?? "").trim();
+    const lastName = String(body.lastName ?? "").trim();
+    const email = String(body.email ?? "")
+      .trim()
+      .toLowerCase();
+    const password = String(body.password ?? "");
+    const role = String(body.role ?? "") as "doctor" | "patient" | "pharmacist";
+    const mobileNumber = String(body.mobileNumber ?? "").trim() || undefined;
+    const govId = String(body.govId ?? "").trim() || undefined;
+    const specialization = body.specialization
+      ? String(body.specialization).trim()
+      : undefined;
+    const bloodType = body.bloodType ? String(body.bloodType) : undefined;
+    const age = body.age ? Number(body.age) : undefined;
+
+    // ── Validation ─────────────────────────────────────────────────────────
+    if (!firstName || !lastName || !email || !password || !role) {
+      return NextResponse.json(
+        {
+          message:
+            "firstName, lastName, email, password and role are all required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const validRoles = ["doctor", "patient", "pharmacist"];
+    if (!validRoles.includes(role)) {
+      return NextResponse.json(
+        { message: `Invalid role. Must be one of: ${validRoles.join(", ")}.` },
+        { status: 400 },
+      );
+    }
+
+    // ── Duplicate check ────────────────────────────────────────────────────
+    const existing = await findUserByEmail(email);
+    if (existing) {
+      return NextResponse.json(
+        { message: "An account with this email already exists." },
+        { status: 409 },
+      );
+    }
+
+    // ── Create user ────────────────────────────────────────────────────────
+    const created = await createLocalUser({
       firstName,
       lastName,
       email,
@@ -35,57 +61,35 @@ export async function POST(req: NextRequest) {
       password,
       age,
       bloodType,
-      specialization
-    } = body;
+      specialization,
+    });
 
-    if (!email || !password || !firstName || !lastName || !role) {
-      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
-    }
+    // ── Issue JWT (2-day expiry) ───────────────────────────────────────────
+    const token = await encrypt({
+      userId: String(created._id),
+      email: String(created.email),
+      role: created.role as "doctor" | "patient" | "pharmacist",
+      provider: "local",
+    });
 
-    const db = await getDb();
-    const usersCollection = db.collection<User>(USERS_COLLECTION);
+    // httpOnly cookie
+    await setAuthCookie(token);
 
-    const existingUser = await usersCollection.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return NextResponse.json({ message: 'User with this email already exists' }, { status: 409 });
-    }
+    return NextResponse.json(
+      { message: "Account created successfully.", token, user: created },
+      { status: 201 },
+    );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/signup]", message);
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser: Omit<User, '_id'> = {
-      firstName,
-      lastName,
-      email: email.toLowerCase(),
-      mobileNumber,
-      govId,
-      password: hashedPassword,
-      role,
-      status: 'active',
-      createdAt: new Date(),
-      ...(role === 'patient' && { age, bloodType }),
-      ...(role === 'doctor' && { specialization }),
-    };
-
-    const result = await usersCollection.insertOne(newUser as User);
-    const insertedUser = { ...newUser, _id: result.insertedId.toString() };
-
-    const tokenPayload = {
-      userId: insertedUser._id,
-      email: insertedUser.email,
-      role: insertedUser.role,
-    };
-    const token = await encrypt(tokenPayload);
-
-    const { password: _, ...userWithoutPassword } = insertedUser;
-
-    return NextResponse.json({
-        message: 'Account created successfully!',
-        token,
-        user: userWithoutPassword
-    }, { status: 201 });
-
-  } catch (error) {
-    console.error('Signup error:', error);
-    return NextResponse.json({ message: 'An internal server error occurred' }, { status: 500 });
+    return NextResponse.json(
+      {
+        message: "Sign up failed. Please try again.",
+        // expose detail in development so you can see the real error
+        ...(process.env.NODE_ENV === "development" && { detail: message }),
+      },
+      { status: 500 },
+    );
   }
 }

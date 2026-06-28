@@ -1,31 +1,27 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
+import * as React from "react";
+import Link from "next/link";
 import {
+  IconFileAi,
   IconCamera,
-  IconChartBar,
-  IconDashboard,
   IconDatabase,
   IconEmergencyBed,
-  IconFileAi,
-  IconFileDescription,
   IconFileWord,
-  IconFolder,
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
+  IconMedicalCross,
   IconPrescription,
   IconReport,
-  IconSearch,
   IconSettings,
   IconUsers,
-} from "@tabler/icons-react"
+} from "@tabler/icons-react";
 
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user1"
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user1";
 import {
   Sidebar,
   SidebarContent,
@@ -34,135 +30,86 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { ListIcon, User, UserIcon } from "lucide-react"
+} from "@/components/ui/sidebar";
 
 const data = {
   user: {
-    name: "Doctor ",
-    email: "Dr.Vinod@gmail.com",
-    avatar: "#",
+    name: "Doctor",
+    email: "doctor@mediscanai.com",
+    avatar: "",
   },
   navMain: [
+    {
+      title: "Doctor Dashboard",
+      url: "/dashboard/doctor",
+      icon: IconListDetails,
+    },
     {
       title: "Prescriptions",
       url: "/dashboard/doctor/prescriptions",
       icon: IconPrescription,
     },
     {
-      title: "ScanQR Code",
+      title: "Scan QR Code",
       url: "/dashboard/doctor/scan",
       icon: IconCamera,
     },
     {
       title: "Doctors",
-      url: "/dashboard/admin/doctors",
-      icon: IconListDetails,
+      url: "/dashboard/doctor/doctors",
+      icon: IconMedicalCross,
     },
     {
       title: "Pharmacy",
-      url: "/dashboard/admin/pharmacy",
+      url: "/dashboard/doctor/pharmacy",
       icon: IconEmergencyBed,
     },
     {
       title: "Team",
-      url: "/dashboard/admin/team",
+      url: "/dashboard/doctor/team",
       icon: IconUsers,
     },
     {
-      title: "Drugs ",
-      url: "/dashboard/admin/drugs",
-      icon: ListIcon,
+      title: "Drugs",
+      url: "/dashboard/doctor/drugs",
+      icon: IconListDetails,
     },
     {
-      title: "AI assistants ",
+      title: "AI Assistant",
       url: "/dashboard/doctor/ai",
-      icon: IconChartBar,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
       icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
     },
   ],
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/dashboard/doctor/settings",
       icon: IconSettings,
     },
     {
       title: "Get Help",
-      url: "#",
+      url: "/dashboard/doctor/help",
       icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
     },
   ],
   documents: [
     {
       name: "Data Library",
-      url: "#",
+      url: "/dashboard/doctor/data-library",
       icon: IconDatabase,
     },
     {
       name: "Reports",
-      url: "#",
+      url: "/dashboard/doctor/reports",
       icon: IconReport,
     },
     {
-      name: "Word Assistant",
-      url: "#",
+      name: "Work Assistant",
+      url: "/dashboard/doctor/work-assistant",
       icon: IconFileWord,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -174,9 +121,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <Link href="/">
+              <Link href="/dashboard/doctor">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold"> MediScan AI</span>
+                <span className="text-base font-semibold">MediScan AI</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -191,5 +138,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

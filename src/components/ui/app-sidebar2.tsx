@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
+import * as React from "react";
+import Link from "next/link";
 import {
   IconCamera,
   IconChartBar,
@@ -20,12 +20,12 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
-} from "@tabler/icons-react"
+} from "@tabler/icons-react";
 
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -34,49 +34,49 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { ListIcon, User, UserIcon } from "lucide-react"
+} from "@/components/ui/sidebar";
+import { User, UserIcon } from "lucide-react";
 
 const data = {
   user: {
-    name: "Phramacist",
-    email: "Phramacist@gmail.com",
+    name: "Pharmacist",
+    email: "pharmacist@mediscanai.com",
     avatar: "#",
   },
   navMain: [
     {
       title: "Medicines",
-      url: "/dashboard",
+      url: "/dashboard/pharmacist",
       icon: IconMedicalCross,
     },
     {
       title: "ScanQR Code",
-      url: "/dashboard/medical-shop/scan",
+      url: "/dashboard/pharmacist/scan",
       icon: IconCamera,
     },
     {
       title: "Doctors",
-      url: "/",
+      url: "/dashboard/pharmacist",
       icon: IconListDetails,
     },
     {
       title: "Orders",
-      url: "/",
-      icon : IconMenuOrder,
+      url: "/dashboard/pharmacist",
+      icon: IconMenuOrder,
     },
     {
       title: "Team",
-      url: "/dashboard/",
+      url: "/dashboard/pharmacist",
       icon: IconUsers,
     },
     {
       title: "Drugs Medicines",
-      url: "/dashboard/",
-      icon: ListIcon,
+      url: "/dashboard/pharmacist",
+      icon: IconMedicalCross,
     },
     {
       title: "AI assistants ",
-      url: "/dashboard/medical-shop/ai",
+      url: "/dashboard/pharmacist/ai",
       icon: IconChartBar,
     },
   ],
@@ -162,7 +162,7 @@ const data = {
       icon: IconFileWord,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -191,5 +191,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
